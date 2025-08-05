@@ -221,9 +221,6 @@
     </div>
 
     <script>
-        // --- All JavaScript logic from the previous version goes here ---
-        // It remains unchanged as the improvements were primarily in the CSS.
-        // For completeness, I'll paste it again.
         const canvas = document.getElementById('physics-canvas');
         const ctx = canvas.getContext('2d');
         const controlsPanel = document.getElementById('controls-panel');
@@ -349,7 +346,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             switch (currentSim) {
                 case 'linear':
-                    drawLinear();
+                    drawParticle();
                     updateInfoOverlayLinear();
                     break;
                 case 'projectile':
@@ -384,10 +381,6 @@
                 ctx.fillStyle = `rgba(83, 168, 182, ${alpha * 0.5})`;
                 ctx.fill();
             }
-        }
-
-        function drawLinear() {
-            drawParticle();
         }
 
         function drawRotational() {
@@ -453,7 +446,7 @@
             if (currentSim !== 'projectile') return;
             let tempParticle = { ...particle };
             predictedPath = [];
-            while(tempParticle.y < canvas.height + tempParticle.radius * 5) { // Predict a bit past the screen bottom
+            while(tempParticle.y < canvas.height + tempParticle.radius * 5) {
                 predictedPath.push({ x: tempParticle.x, y: tempParticle.y });
                 tempParticle.vy += tempParticle.g;
                 tempParticle.x += tempParticle.vx;
@@ -492,6 +485,7 @@
             resetSimulation();
         });
 
+        // --- INITIALIZATION ---
         resizeCanvas();
         setupControls('projectile');
         animate();
