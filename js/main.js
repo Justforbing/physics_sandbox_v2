@@ -152,15 +152,21 @@ class PhysicsApp {
         
         title.textContent = titles[type] || 'Physics Simulator';
 
-        // Setup canvas
+        // Clear previous controls
+        controlsContainer.innerHTML = '';
+        
+        // --- CORRECTED LOGIC STARTS HERE ---
+
+        // 1. Make the viewer visible FIRST so its dimensions can be read.
+        viewer.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // 2. Setup the canvas now that it's visible.
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.setupCanvas();
 
-        // Clear previous controls
-        controlsContainer.innerHTML = '';
-
-        // Create simulation based on type
+        // Create simulation instance based on type
         switch (type) {
             case 'linear':
                 this.currentSimulation = new LinearMotionSimulation(this.canvas, this.ctx);
@@ -178,16 +184,23 @@ class PhysicsApp {
                 return;
         }
 
-        // Setup controls
+        // Setup the interactive controls
         this.setupControls(controlsContainer);
 
-        // Show viewer
-        viewer.classList.add('active');
-        document.body.style.overflow = 'hidden';
-
-        // Start simulation
+        // Initialize the simulation's state
         this.currentSimulation.init();
-        this.startAnimation();
+
+        // 3. Draw the initial state of the simulation, but do NOT start the animation.
+        this.currentSimulation.draw();
+
+        // 4. Ensure the play/pause button is correctly set to "Play".
+        this.isPlaying = false;
+        const playBtn = document.getElementById('playPauseBtn');
+        if (playBtn) {
+            playBtn.textContent = '▶️ Play';
+        }
+        
+        // --- CORRECTED LOGIC ENDS HERE ---
     }
 
     closeSimulation() {
@@ -204,7 +217,6 @@ class PhysicsApp {
         this.currentSimulation = null;
         this.isPlaying = false;
         
-        // Reset play button
         const playBtn = document.getElementById('playPauseBtn');
         if (playBtn) {
             playBtn.textContent = '▶️ Play';
@@ -213,27 +225,21 @@ class PhysicsApp {
 
     setupCanvas() {
         const container = this.canvas.parentElement;
+        // Check if container is valid, if not, we can't size the canvas.
+        if (!container) return;
+
         const rect = container.getBoundingClientRect();
         
-        // Set canvas size based on container
-        const maxWidth = Math.min(800, rect.width - 40);
-        const maxHeight = Math.min(400, rect.height - 40);
-        
-        this.canvas.width = maxWidth;
-        this.canvas.height = maxHeight;
-        
-        // Scale for high DPI displays
+        // Set a reasonable size. Subtract padding/margin from container if necessary.
         const dpr = window.devicePixelRatio || 1;
-        const displayWidth = this.canvas.clientWidth;
-        const displayHeight = this.canvas.clientHeight;
-        
-        this.canvas.width = displayWidth * dpr;
-        this.canvas.height = displayHeight * dpr;
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
         this.ctx.scale(dpr, dpr);
         
-        this.canvas.style.width = displayWidth + 'px';
-        this.canvas.style.height = displayHeight + 'px';
+        this.canvas.style.width = rect.width + 'px';
+        this.canvas.style.height = rect.height + 'px';
     }
+
 
     setupControls(container) {
         if (!this.currentSimulation || !this.currentSimulation.getControls) return;
@@ -275,6 +281,7 @@ class PhysicsApp {
     }
 
     togglePlayPause() {
+        if (!this.currentSimulation) return;
         const playBtn = document.getElementById('playPauseBtn');
         
         if (this.isPlaying) {
@@ -284,41 +291,47 @@ class PhysicsApp {
             this.startAnimation();
             playBtn.textContent = '⏸️ Pause';
         }
-        
-        this.isPlaying = !this.isPlaying;
     }
 
     startAnimation() {
-        if (!this.currentSimulation) return;
-        
+        if (!this.currentSimulation || this.isPlaying) return;
+        this.isPlaying = true;
+
+        let lastTimestamp = 0;
         const animate = (timestamp) => {
+            if (!this.isPlaying) return;
+
+            if (!this.currentSimulation.startTime) {
+                 this.currentSimulation.startTime = timestamp;
+            }
+            
             this.currentSimulation.update(timestamp);
             this.currentSimulation.draw();
             
-            if (this.isPlaying) {
-                this.animationId = requestAnimationFrame(animate);
-            }
+            this.animationId = requestAnimationFrame(animate);
         };
         
-        this.isPlaying = true;
         this.animationId = requestAnimationFrame(animate);
     }
 
     pauseAnimation() {
+        this.isPlaying = false;
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
             this.animationId = null;
         }
-        this.isPlaying = false;
+         if (this.currentSimulation) {
+            this.currentSimulation.startTime = null; // Reset start time on pause
+        }
     }
 
     resetSimulation() {
+        this.pauseAnimation();
         if (this.currentSimulation && this.currentSimulation.reset) {
             this.currentSimulation.reset();
+            this.currentSimulation.draw();
         }
         
-        // Reset play state
-        this.pauseAnimation();
         const playBtn = document.getElementById('playPauseBtn');
         if (playBtn) {
             playBtn.textContent = '▶️ Play';
@@ -331,6 +344,8 @@ class PhysicsApp {
             if (this.currentSimulation.resize) {
                 this.currentSimulation.resize();
             }
+            // Redraw after resize
+            this.currentSimulation.draw();
         }
     }
 }
@@ -378,13 +393,22 @@ class BaseSimulation {
         this.time = (timestamp - this.startTime) / 1000;
         this.lastTime = timestamp;
 
+        // Prevent large jumps in dt if the tab was inactive
+        if (this.dt > 0.1) {
+            this.dt = 0.1;
+        }
+        
         this.updatePhysics();
     }
 
     draw() {
-        // Clear canvas with dark background
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = this.canvas.width / dpr;
+        const displayHeight = this.canvas.height / dpr;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = 'rgba(15, 15, 35, 0.5)';
+        this.ctx.fillRect(0, 0, displayWidth, displayHeight);
         
         this.drawBackground();
         this.drawObjects();
@@ -400,25 +424,29 @@ class BaseSimulation {
     }
 
     drawBackground() {
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = this.canvas.width / dpr;
+        const displayHeight = this.canvas.height / dpr;
+
         // Draw grid
         this.ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
         this.ctx.lineWidth = 1;
         
-        const gridSize = 20;
+        const gridSize = 40;
         
         // Vertical lines
-        for (let x = 0; x < this.canvas.width; x += gridSize) {
+        for (let x = 0; x < displayWidth; x += gridSize) {
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.lineTo(x, displayHeight);
             this.ctx.stroke();
         }
         
         // Horizontal lines
-        for (let y = 0; y < this.canvas.height; y += gridSize) {
+        for (let y = 0; y < displayHeight; y += gridSize) {
             this.ctx.beginPath();
             this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.lineTo(displayWidth, y);
             this.ctx.stroke();
         }
     }
@@ -444,7 +472,6 @@ class BaseSimulation {
     }
 
     updateParameter(name, value) {
-        // Override in child classes
         if (this.hasOwnProperty(name)) {
             this[name] = value;
         }
