@@ -113,7 +113,7 @@ class PhysicsApp {
     generateFloatingParticles() {
         const particlesContainer = document.querySelector('.floating-particles');
         if (!particlesContainer) return;
-        if(particlesContainer.children.length > 0) return; // Don't add more particles
+        if(particlesContainer.children.length > 0) return;
 
         for (let i = 0; i < 50; i++) {
             const particle = document.createElement('div');
@@ -193,7 +193,6 @@ class PhysicsApp {
         this.canvas.style.width = `${rect.width}px`;
         this.canvas.style.height = `${rect.height}px`;
 
-        // This is the crucial fix: Reset transform and apply scale once.
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
@@ -292,17 +291,19 @@ class BaseSimulation {
         this.time = 0;
         this.dt = 0;
         this.gravity = 9.81;
-        this.pixelsPerMeter = 30; // Adjusted for better viewing
+        this.pixelsPerMeter = 30;
         this.dpr = 1;
         this.displayWidth = 0;
         this.displayHeight = 0;
+        // The new camera object for all simulations
+        this.camera = { x: 0, y: 0 };
     }
 
     init() {
         this.startTime = null;
         this.lastTime = 0;
         this.time = 0;
-        this.resize(); // Sets dimensions and calls setupInitialState
+        this.resize();
     }
     
     resize() {
@@ -318,18 +319,31 @@ class BaseSimulation {
             this.lastTime = timestamp;
         }
         this.dt = (timestamp - this.lastTime) / 1000;
-        if (this.dt > 0.1) this.dt = 0.1; // Prevent large jumps
+        if (this.dt > 0.1) this.dt = 0.1;
         this.time += this.dt;
         this.lastTime = timestamp;
         this.updatePhysics();
+        // Update the camera position every frame
+        this.updateCamera();
     }
 
     draw() {
         this.ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
         this.ctx.fillStyle = 'rgba(15, 15, 35, 0.5)';
         this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
+
+        // Save the current state, apply camera transform
+        this.ctx.save();
+        this.ctx.translate(-this.camera.x, -this.camera.y);
+
+        // These are now drawn in "world space"
         this.drawBackground();
         this.drawObjects();
+
+        // Restore the state to draw UI in "screen space"
+        this.ctx.restore();
+        
+        // This is drawn normally, unaffected by the camera
         this.drawUI();
     }
 
@@ -337,14 +351,19 @@ class BaseSimulation {
         this.ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
         this.ctx.lineWidth = 1;
         const gridSize = 40;
-        for (let x = 0; x < this.displayWidth; x += gridSize) {
+        
+        // The grid now needs to be drawn relative to the camera's view
+        const startX = Math.floor(this.camera.x / gridSize) * gridSize;
+        const startY = Math.floor(this.camera.y / gridSize) * gridSize;
+
+        for (let x = startX; x < startX + this.displayWidth + gridSize; x += gridSize) {
             this.ctx.beginPath();
-            this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.displayHeight);
+            this.ctx.moveTo(x, startY); this.ctx.lineTo(x, startY + this.displayHeight + gridSize);
             this.ctx.stroke();
         }
-        for (let y = 0; y < this.displayHeight; y += gridSize) {
+        for (let y = startY; y < startY + this.displayHeight + gridSize; y += gridSize) {
             this.ctx.beginPath();
-            this.ctx.moveTo(0, y); this.ctx.lineTo(this.displayWidth, y);
+            this.ctx.moveTo(startX, y); this.ctx.lineTo(startX + this.displayWidth + gridSize, y);
             this.ctx.stroke();
         }
     }
@@ -355,6 +374,9 @@ class BaseSimulation {
         this.ctx.fillText(`Time: ${this.time.toFixed(2)}s`, 20, 30);
     }
 
+    // New empty camera update function for child classes to override
+    updateCamera() {}
+    
     reset() { this.init(); }
     setupInitialState() { /* Override in child */ }
     updatePhysics() { /* Override in child */ }
