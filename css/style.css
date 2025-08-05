@@ -1,0 +1,118 @@
+/* General Body Styles */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background: #f0f2f5;
+    color: #333;
+}
+
+/* Header */
+header {
+    background: #007BFF;
+    color: #fff;
+    padding: 1.5rem 0;
+    text-align: center;
+    border-bottom: 5px solid #0056b3;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+
+/* Main Content */
+main {
+    padding: 1rem;
+    max-width: 1000px;
+    margin: 20px auto;
+}
+
+section {
+    background: #fff;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+h2 {
+    text-align: center;
+    color: #007BFF;
+    margin-bottom: 1.5rem;
+}
+
+/* Simulation Containers */
+.simulation-container {
+    width: 100%;
+    height: 350px;
+    background: #eef5ff;
+    margin-bottom: 1.5rem;
+    border: 2px dashed #007BFF;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Controls */
+.controls {
+    text-align: center;
+}
+
+.controls label {
+    display: block;
+    margin-bottom: 0.8rem;
+    font-weight: bold;
+}
+
+.controls input[type="range"] {
+    width: 70%;
+    max-width: 350px;
+    cursor: pointer;
+}
+
+.controls button {
+    background: #28a745;
+    color: #fff;
+    border: none;
+    padding: 12px 25px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    transition: background-color 0.3s;
+}
+
+.controls button:hover {
+    background: #218838;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 1.5rem 0;
+    background: #343a40;
+    color: #fff;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Mobile Friendliness */
+@media(max-width: 768px) {
+    header h1 {
+        font-size: 2em;
+    }
+    .controls input[type="range"] {
+        width: 90%;
+    }
+    section {
+        padding: 1.5rem;
+    }
+}
