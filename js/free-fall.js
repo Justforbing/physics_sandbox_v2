@@ -1,3 +1,5 @@
+// js/free-fall.js
+
 // Free Fall Simulation
 class FreeFallSimulation extends BaseSimulation {
     constructor(canvas, ctx) {
@@ -15,7 +17,7 @@ class FreeFallSimulation extends BaseSimulation {
         this.acceleration = -this.gravity;
         
         // Visual parameters
-        this.objectRadius = 12;
+        this.objectRadius = 15;
         this.groundY = null;
         this.startY = null;
         this.objectX = null;
@@ -29,18 +31,24 @@ class FreeFallSimulation extends BaseSimulation {
         
         // Animation states
         this.hasLanded = false;
-        this.bounceCoefficient = 0.7;
+        this.bounceCoefficient = 0.6;
     }
 
     setupInitialState() {
+        // --- FIX STARTS HERE ---
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = this.canvas.width / dpr;
+        const displayHeight = this.canvas.height / dpr;
+        // --- FIX ENDS HERE ---
+
         this.height = this.initialHeight;
         this.velocity = this.initialVelocity;
         this.acceleration = -this.gravity;
         this.hasLanded = false;
         
-        this.groundY = this.canvas.height - 50;
+        this.groundY = displayHeight - 50;
         this.startY = 50;
-        this.objectX = this.canvas.width / 2;
+        this.objectX = displayWidth / 2;
         
         this.trail = [];
         this.heightData = [];
@@ -48,7 +56,7 @@ class FreeFallSimulation extends BaseSimulation {
     }
 
     updatePhysics() {
-        if (!this.startTime || this.hasLanded) return;
+        if (this.hasLanded) return;
         
         // Apply air resistance if enabled
         let netAcceleration = -this.gravity;
@@ -80,7 +88,7 @@ class FreeFallSimulation extends BaseSimulation {
         // Add to trail
         this.trail.push({
             x: this.objectX,
-            y: Math.max(pixelY, this.startY),
+            y: pixelY,
             time: this.time,
             velocity: this.velocity
         });
@@ -101,6 +109,9 @@ class FreeFallSimulation extends BaseSimulation {
 
     drawBackground() {
         super.drawBackground();
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = this.canvas.width / dpr;
+        const displayHeight = this.canvas.height / dpr;
         
         // Draw height scale
         this.ctx.strokeStyle = '#6366f1';
@@ -116,8 +127,9 @@ class FreeFallSimulation extends BaseSimulation {
         this.ctx.textAlign = 'right';
         
         const maxHeight = (this.groundY - this.startY) / this.pixelsPerMeter;
-        for (let i = 0; i <= maxHeight; i++) {
+        for (let i = 0; i <= maxHeight; i+=2) {
             const y = this.groundY - (i * this.pixelsPerMeter);
+            if (y < this.startY) continue;
             
             this.ctx.strokeStyle = '#374151';
             this.ctx.lineWidth = 1;
@@ -131,45 +143,11 @@ class FreeFallSimulation extends BaseSimulation {
         
         // Draw ground
         this.ctx.fillStyle = '#059669';
-        this.ctx.fillRect(0, this.groundY, this.canvas.width, this.canvas.height - this.groundY);
-        
-        // Ground pattern
-        this.ctx.fillStyle = '#047857';
-        for (let x = 0; x < this.canvas.width; x += 20) {
-            this.ctx.fillRect(x, this.groundY, 10, this.canvas.height - this.groundY);
-        }
-        
-        // Draw gravity arrow
-        this.drawGravityIndicator();
+        this.ctx.fillRect(0, this.groundY, displayWidth, displayHeight - this.groundY);
         
         this.ctx.textAlign = 'left';
     }
 
-    drawGravityIndicator() {
-        const arrowX = this.canvas.width - 80;
-        const arrowY = 80;
-        
-        // Arrow shaft
-        this.ctx.strokeStyle = '#ef4444';
-        this.ctx.lineWidth = 3;
-        this.ctx.beginPath();
-        this.ctx.moveTo(arrowX, arrowY);
-        this.ctx.lineTo(arrowX, arrowY + 40);
-        this.ctx.stroke();
-        
-        // Arrow head
-        this.ctx.fillStyle = '#ef4444';
-        this.ctx.beginPath();
-        this.ctx.moveTo(arrowX, arrowY + 40);
-        this.ctx.lineTo(arrowX - 6, arrowY + 30);
-        this.ctx.lineTo(arrowX + 6, arrowY + 30);
-        this.ctx.fill();
-        
-        // Label
-        this.ctx.fillStyle = '#ef4444';
-        this.ctx.font = '12px Space Grotesk';
-        this.ctx.fillText('g = 9.81 m/s²', arrowX - 20, arrowY - 10);
-    }
 
     drawObjects() {
         // Draw trail with velocity-based coloring
@@ -190,21 +168,20 @@ class FreeFallSimulation extends BaseSimulation {
         
         // Draw object
         const pixelY = this.groundY - (this.height * this.pixelsPerMeter);
-        const clampedY = Math.max(pixelY, this.startY);
         
         // Object shadow on ground
         if (this.height > 0.1) {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            const shadowRadius = this.objectRadius * (1 + this.height * 0.1);
+            const shadowRadius = this.objectRadius * (1 - this.height / (this.initialHeight+5) * 0.5);
             this.ctx.beginPath();
-            this.ctx.ellipse(this.objectX, this.groundY + 10, shadowRadius, shadowRadius * 0.3, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(this.objectX, this.groundY + 5, shadowRadius, shadowRadius * 0.3, 0, 0, Math.PI * 2);
             this.ctx.fill();
         }
         
         // Main object with gradient
         const gradient = this.ctx.createRadialGradient(
-            this.objectX - 4, clampedY - 4, 0,
-            this.objectX, clampedY, this.objectRadius
+            this.objectX - 4, pixelY - 4, 0,
+            this.objectX, pixelY, this.objectRadius
         );
         
         if (this.hasLanded) {
@@ -217,112 +194,16 @@ class FreeFallSimulation extends BaseSimulation {
         
         this.ctx.fillStyle = gradient;
         this.ctx.beginPath();
-        this.ctx.arc(this.objectX, clampedY, this.objectRadius, 0, Math.PI * 2);
+        this.ctx.arc(this.objectX, pixelY, this.objectRadius, 0, Math.PI * 2);
         this.ctx.fill();
         
         // Object highlight
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
         this.ctx.beginPath();
-        this.ctx.arc(this.objectX - 3, clampedY - 3, this.objectRadius * 0.4, 0, Math.PI * 2);
+        this.ctx.arc(this.objectX - 3, pixelY - 3, this.objectRadius * 0.4, 0, Math.PI * 2);
         this.ctx.fill();
-        
-        // Velocity vector
-        if (Math.abs(this.velocity) > 0.5 && !this.hasLanded) {
-            const vectorLength = Math.min(Math.abs(this.velocity) * 4, 60);
-            const direction = this.velocity > 0 ? -1 : 1; // Up is negative Y
-            
-            this.ctx.strokeStyle = this.velocity > 0 ? '#10b981' : '#ef4444';
-            this.ctx.lineWidth = 3;
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.objectX + this.objectRadius + 5, clampedY);
-            this.ctx.lineTo(this.objectX + this.objectRadius + 5, clampedY + (vectorLength * direction));
-            this.ctx.stroke();
-            
-            // Arrow head
-            this.ctx.fillStyle = this.velocity > 0 ? '#10b981' : '#ef4444';
-            this.ctx.beginPath();
-            const arrowTipY = clampedY + (vectorLength * direction);
-            this.ctx.moveTo(this.objectX + this.objectRadius + 5, arrowTipY);
-            this.ctx.lineTo(this.objectX + this.objectRadius, arrowTipY - (direction * 8));
-            this.ctx.lineTo(this.objectX + this.objectRadius + 10, arrowTipY - (direction * 8));
-            this.ctx.fill();
-        }
-        
-        // Draw mini graphs
-        this.drawMiniGraphs();
     }
 
-    drawMiniGraphs() {
-        const graphWidth = 150;
-        const graphHeight = 80;
-        const graphX = this.canvas.width - graphWidth - 20;
-        const heightGraphY = 20;
-        const velocityGraphY = heightGraphY + graphHeight + 20;
-        
-        // Height graph
-        this.drawGraph(
-            this.heightData,
-            graphX, heightGraphY, graphWidth, graphHeight,
-            'Height (m)', '#10b981'
-        );
-        
-        // Velocity graph
-        this.drawGraph(
-            this.velocityData,
-            graphX, velocityGraphY, graphWidth, graphHeight,
-            'Velocity (m/s)', '#ef4444'
-        );
-    }
-
-    drawGraph(data, x, y, width, height, label, color) {
-        if (data.length < 2) return;
-        
-        // Background
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(x, y, width, height);
-        
-        // Border
-        this.ctx.strokeStyle = '#374151';
-        this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(x, y, width, height);
-        
-        // Label
-        this.ctx.fillStyle = '#e2e8f0';
-        this.ctx.font = '12px Space Grotesk';
-        this.ctx.fillText(label, x + 5, y + 15);
-        
-        // Find min/max values
-        const values = data.map(d => d.value);
-        const minValue = Math.min(...values);
-        const maxValue = Math.max(...values);
-        const range = maxValue - minValue || 1;
-        
-        // Draw data line
-        this.ctx.strokeStyle = color;
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        
-        for (let i = 0; i < data.length; i++) {
-            const dataX = x + (i / (data.length - 1)) * width;
-            const dataY = y + height - ((data[i].value - minValue) / range) * (height - 20);
-            
-            if (i === 0) {
-                this.ctx.moveTo(dataX, dataY);
-            } else {
-                this.ctx.lineTo(dataX, dataY);
-            }
-        }
-        
-        this.ctx.stroke();
-        
-        // Current value
-        if (data.length > 0) {
-            const currentValue = data[data.length - 1].value;
-            this.ctx.fillStyle = color;
-            this.ctx.font = '10px Space Grotesk';
-            this.ctx.fillText(currentValue.toFixed(1), x + width - 40, y + height - 5);
-        }
-    }
 
     drawUI() {
         super.drawUI();
@@ -354,7 +235,7 @@ class FreeFallSimulation extends BaseSimulation {
                 name: 'initialHeight',
                 label: 'Initial Height',
                 min: 1,
-                max: 15,
+                max: 20,
                 step: 0.5,
                 value: this.initialHeight,
                 unit: 'm'
@@ -362,7 +243,7 @@ class FreeFallSimulation extends BaseSimulation {
             {
                 name: 'initialVelocity',
                 label: 'Initial Velocity',
-                min: -10,
+                min: -20,
                 max: 20,
                 step: 0.5,
                 value: this.initialVelocity,
