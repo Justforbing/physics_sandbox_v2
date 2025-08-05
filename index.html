@@ -3,492 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Augmented Physics Sandbox</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #1a1a2e;
-            --sidebar-color: #16213e;
-            --primary-color: #0f3460;
-            --accent-color: #e94560;
-            --font-color: #e0e0e0;
-            --glow-color: #53a8b6;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--font-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .container {
-            display: flex;
-            width: 95vw;
-            height: 95vh;
-            background-color: var(--sidebar-color);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--primary-color);
-        }
-
-        .sidebar {
-            width: 320px;
-            padding: 25px;
-            border-right: 2px solid var(--primary-color);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .sidebar h1 {
-            font-size: 1.8rem;
-            color: var(--accent-color);
-            text-align: center;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .sim-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            background-color: var(--primary-color);
-            padding: 5px;
-            border-radius: 10px;
-        }
-
-        .sim-selector button {
-            background-color: transparent;
-            font-size: 0.9rem;
-            padding: 8px 0;
-        }
-
-        .sim-selector button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .sim-selector button.active {
-            background-color: var(--accent-color);
-            box-shadow: 0 0 10px var(--accent-color);
-        }
-
-        #controls-panel {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .control-group label {
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-        
-        .control-group span {
-            font-family: 'Roboto Mono', monospace;
-            color: var(--glow-color);
-            font-weight: 700;
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
-            background: var(--primary-color);
-            border-radius: 5px;
-            outline: none;
-            opacity: 0.7;
-            transition: opacity .2s;
-        }
-
-        input[type="range"]:hover {
-            opacity: 1;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: var(--accent-color);
-            cursor: pointer;
-            border-radius: 50%;
-            border: 2px solid var(--sidebar-color);
-        }
-
-        button {
-            padding: 12px 15px;
-            border: none;
-            border-radius: 8px;
-            background-color: var(--primary-color);
-            color: var(--font-color);
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-        }
-        
-        button:active {
-            transform: scale(0.98);
-        }
-
-        button:hover {
-            background-color: var(--accent-color);
-        }
-        
-        button#ai-predict-btn {
-            background-color: transparent;
-            border: 2px solid var(--accent-color);
-            margin-top: auto;
-        }
-
-        button#ai-predict-btn:hover {
-            background-color: var(--accent-color);
-            color: white;
-        }
-
-        .main-content {
-            flex-grow: 1;
-            position: relative;
-            background-color: var(--bg-color);
-            border-radius: 0 15px 15px 0;
-        }
-
-        #physics-canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(15, 52, 96, 0.4) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(15, 52, 96, 0.4) 1px, transparent 1px);
-            background-size: 25px 25px;
-        }
-        
-        #info-overlay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-family: 'Roboto Mono', monospace;
-            background: rgba(22, 33, 62, 0.85);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid var(--primary-color);
-            pointer-events: none;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            backdrop-filter: blur(5px);
-        }
-    </style>
+    <title>Physics in Motion</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <h1>Physics Sandbox</h1>
-            <div class="sim-selector">
-                <button id="btn-linear" class="sim-btn">Linear</button>
-                <button id="btn-projectile" class="sim-btn active">Projectile</button>
-                <button id="btn-rotational" class="sim-btn">Rotational</button>
+    <header>
+        <h1>Physics in Motion</h1>
+        <p>An interactive way to learn about the world around us.</p>
+    </header>
+
+    <main>
+        <!-- Linear Motion Section -->
+        <section id="linear-motion">
+            <h2>Linear Motion</h2>
+            <div class="simulation-container">
+                <canvas id="linear-canvas"></canvas>
             </div>
-            <div id="controls-panel"></div>
-            <div class="action-buttons" style="display: flex; gap: 10px;">
-                <button id="launch-btn">Launch</button>
-                <button id="reset-btn">Reset</button>
+            <div class="controls">
+                <label for="velocity">Velocity (m/s): <span id="velocity-value">2</span></label>
+                <input type="range" id="velocity" min="-10" max="10" value="2" step="0.5">
             </div>
-             <button id="ai-predict-btn" title="AI predicts the path based on current settings">🔮 Ask AI to Predict Path</button>
-        </aside>
-        <main class="main-content">
-            <canvas id="physics-canvas"></canvas>
-            <div id="info-overlay"></div>
-        </main>
-    </div>
+        </section>
 
-    <script>
-        const canvas = document.getElementById('physics-canvas');
-        const ctx = canvas.getContext('2d');
-        const controlsPanel = document.getElementById('controls-panel');
-        const infoOverlay = document.getElementById('info-overlay');
+        <!-- Free Fall Section -->
+        <section id="free-fall">
+            <h2>Free Fall</h2>
+            <div class="simulation-container">
+                <canvas id="freefall-canvas"></canvas>
+            </div>
+            <div class="controls">
+                <label for="gravity">Gravity (m/s²): <span id="gravity-value">9.8</span></label>
+                <input type="range" id="gravity" min="1" max="20" value="9.8" step="0.1">
+                <button id="start-freefall">Drop</button>
+            </div>
+        </section>
 
-        let currentSim = 'projectile';
-        let simulationRunning = false;
-        let animationFrameId;
+        <!-- Projectile Motion Section -->
+        <section id="projectile-motion">
+            <h2>Projectile Motion</h2>
+            <div class="simulation-container">
+                <canvas id="projectile-canvas"></canvas>
+            </div>
+            <div class="controls">
+                <label for="angle">Angle (°): <span id="angle-value">45</span></label>
+                <input type="range" id="angle" min="0" max="90" value="45">
+                <label for="initial-velocity">Initial Velocity (m/s): <span id="initial-velocity-value">25</span></label>
+                <input type="range" id="initial-velocity" min="5" max="50" value="25">
+                <button id="launch-projectile">Launch</button>
+            </div>
+        </section>
 
-        let particle, rotatingBox, projectileTrail, predictedPath;
+        <!-- Rotational Motion Section -->
+        <section id="rotational-motion">
+            <h2>Rotational Motion</h2>
+            <div class="simulation-container">
+                <canvas id="rotational-canvas"></canvas>
+            </div>
+            <div class="controls">
+                <label for="angular-velocity">Angular Velocity (rad/s): <span id="angular-velocity-value">1</span></label>
+                <input type="range" id="angular-velocity" min="-5" max="5" value="1" step="0.25">
+            </div>
+        </section>
+    </main>
 
-        function resizeCanvas() {
-            const container = canvas.parentElement;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-        }
-        
-        function toRadians(degrees) {
-            return degrees * (Math.PI / 180);
-        }
+    <footer>
+        <p>Created with ❤️ for young physicists.</p>
+    </footer>
 
-        function setupControls(simType) {
-            controlsPanel.innerHTML = '';
-            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-${simType}`).classList.add('active');
-            
-            const aiButton = document.getElementById('ai-predict-btn');
-
-            switch (simType) {
-                case 'linear':
-                    aiButton.style.display = 'none';
-                    controlsPanel.innerHTML = `
-                        <div class="control-group">
-                            <label for="velocityX">Velocity X: <span id="velocityX-val">5</span> px/s</label>
-                            <input type="range" id="velocityX" min="-10" max="10" value="5" step="0.5">
-                        </div>
-                    `;
-                    break;
-                case 'projectile':
-                    aiButton.style.display = 'block';
-                    controlsPanel.innerHTML = `
-                        <div class="control-group">
-                            <label for="velocity">Initial Velocity: <span id="velocity-val">70</span> m/s</label>
-                            <input type="range" id="velocity" min="10" max="150" value="70" step="1">
-                        </div>
-                        <div class="control-group">
-                            <label for="angle">Launch Angle: <span id="angle-val">45</span>°</label>
-                            <input type="range" id="angle" min="0" max="90" value="45" step="1">
-                        </div>
-                        <div class="control-group">
-                            <label for="gravity">Gravity: <span id="gravity-val">9.8</span> m/s²</label>
-                            <input type="range" id="gravity" min="1" max="25" value="9.8" step="0.1">
-                        </div>
-                    `;
-                    break;
-                case 'rotational':
-                    aiButton.style.display = 'none';
-                    controlsPanel.innerHTML = `
-                        <div class="control-group">
-                            <label for="angularVel">Angular Velocity: <span id="angularVel-val">2</span> °/s</label>
-                            <input type="range" id="angularVel" min="-10" max="10" value="2" step="0.1">
-                        </div>
-                    `;
-                    break;
-            }
-            addControlListeners(simType);
-            resetSimulation();
-        }
-
-        function addControlListeners(simType) {
-            switch (simType) {
-                case 'linear':
-                    document.getElementById('velocityX').addEventListener('input', e => {
-                        document.getElementById('velocityX-val').textContent = e.target.value;
-                        resetSimulation();
-                    });
-                    break;
-                case 'projectile':
-                    ['velocity', 'angle', 'gravity'].forEach(id => {
-                        document.getElementById(id).addEventListener('input', e => {
-                            document.getElementById(`${id}-val`).textContent = e.target.value;
-                            resetSimulation();
-                        });
-                    });
-                    break;
-                case 'rotational':
-                     document.getElementById('angularVel').addEventListener('input', e => {
-                        document.getElementById('angularVel-val').textContent = e.target.value;
-                        resetSimulation();
-                    });
-                    break;
-            }
-        }
-        
-        function resetSimulation() {
-            simulationRunning = false;
-            cancelAnimationFrame(animationFrameId);
-            predictedPath = [];
-            projectileTrail = [];
-
-            switch (currentSim) {
-                case 'linear':
-                    particle = { x: 50, y: canvas.height / 2, radius: 10, vx: parseFloat(document.getElementById('velocityX').value) };
-                    break;
-                case 'projectile':
-                    const v = parseFloat(document.getElementById('velocity').value);
-                    const angle = toRadians(parseFloat(document.getElementById('angle').value));
-                    particle = {
-                        x: 50, y: canvas.height - 50, radius: 8,
-                        vx: v * Math.cos(angle),
-                        vy: -v * Math.sin(angle),
-                        g: parseFloat(document.getElementById('gravity').value) / 60
-                    };
-                    break;
-                case 'rotational':
-                    rotatingBox = { x: canvas.width / 2, y: canvas.height / 2, w: 80, h: 50, angle: 0, v_angle: toRadians(parseFloat(document.getElementById('angularVel').value)) / 60 };
-                    break;
-            }
-            draw();
-        }
-        
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            switch (currentSim) {
-                case 'linear':
-                    drawParticle();
-                    updateInfoOverlayLinear();
-                    break;
-                case 'projectile':
-                    drawProjectileTrail();
-                    drawParticle();
-                    drawPrediction();
-                    updateInfoOverlayProjectile();
-                    break;
-                case 'rotational':
-                    drawRotational();
-                    updateInfoOverlayRotational();
-                    break;
-            }
-        }
-        
-        function drawParticle() {
-            ctx.beginPath();
-            ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-            ctx.fillStyle = var(--accent-color);
-            ctx.shadowColor = var(--glow-color);
-            ctx.shadowBlur = 15;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-
-        function drawProjectileTrail() {
-            for (let i = 0; i < projectileTrail.length; i++) {
-                const p = projectileTrail[i];
-                const alpha = i / projectileTrail.length;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, (p.radius / 2) * alpha, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(83, 168, 182, ${alpha * 0.5})`;
-                ctx.fill();
-            }
-        }
-
-        function drawRotational() {
-            ctx.save();
-            ctx.translate(rotatingBox.x, rotatingBox.y);
-            ctx.rotate(rotatingBox.angle);
-            ctx.fillStyle = var(--accent-color);
-            ctx.fillRect(-rotatingBox.w / 2, -rotatingBox.h / 2, rotatingBox.w, rotatingBox.h);
-            ctx.restore();
-        }
-
-        function drawPrediction() {
-            if (predictedPath.length === 0) return;
-            ctx.save();
-            ctx.setLineDash([5, 10]);
-            ctx.strokeStyle = 'rgba(233, 69, 96, 0.7)';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(predictedPath[0].x, predictedPath[0].y);
-            for (let i = 1; i < predictedPath.length; i++) {
-                ctx.lineTo(predictedPath[i].x, predictedPath[i].y);
-            }
-            ctx.stroke();
-            ctx.restore();
-        }
-        
-        function updateInfoOverlayLinear() {
-            infoOverlay.innerHTML = `<span>Type:</span> Linear<br><span>Position X:</span> ${particle.x.toFixed(2)}<br><span>Velocity X:</span> ${particle.vx.toFixed(2)}`;
-        }
-        function updateInfoOverlayProjectile() {
-            infoOverlay.innerHTML = `<span>Type:</span> Projectile<br><span>Position:</span> (${particle.x.toFixed(1)}, ${(canvas.height - particle.y).toFixed(1)})<br><span>Velocity:</span> (${particle.vx.toFixed(1)}, ${(-particle.vy).toFixed(1)})`;
-        }
-        function updateInfoOverlayRotational() {
-            infoOverlay.innerHTML = `<span>Type:</span> Rotational<br><span>Angle:</span> ${(rotatingBox.angle * (180 / Math.PI)).toFixed(1)}°`;
-        }
-
-        function update() {
-            if (!simulationRunning) return;
-            switch (currentSim) {
-                case 'linear':
-                    particle.x += particle.vx;
-                    if (particle.x > canvas.width + particle.radius || particle.x < -particle.radius) simulationRunning = false;
-                    break;
-                case 'projectile':
-                    projectileTrail.push({ x: particle.x, y: particle.y, radius: particle.radius });
-                    if (projectileTrail.length > 150) projectileTrail.shift();
-                    
-                    particle.vy += particle.g;
-                    particle.x += particle.vx;
-                    particle.y += particle.vy;
-
-                    if (particle.y > canvas.height + particle.radius) {
-                        simulationRunning = false;
-                    }
-                    break;
-                case 'rotational':
-                    rotatingBox.angle += rotatingBox.v_angle;
-                    break;
-            }
-        }
-        
-        function predictPath() {
-            if (currentSim !== 'projectile') return;
-            let tempParticle = { ...particle };
-            predictedPath = [];
-            while(tempParticle.y < canvas.height + tempParticle.radius * 5) {
-                predictedPath.push({ x: tempParticle.x, y: tempParticle.y });
-                tempParticle.vy += tempParticle.g;
-                tempParticle.x += tempParticle.vx;
-                tempParticle.y += tempParticle.vy;
-                 if (tempParticle.x > canvas.width || predictedPath.length > 500) break;
-            }
-            draw();
-        }
-
-        function animate() {
-            update();
-            draw();
-            animationFrameId = requestAnimationFrame(animate);
-        }
-
-        document.getElementById('launch-btn').addEventListener('click', () => {
-            if (!simulationRunning) {
-                resetSimulation();
-                simulationRunning = true;
-            }
-        });
-        
-        document.getElementById('reset-btn').addEventListener('click', resetSimulation);
-        
-        document.querySelectorAll('.sim-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                currentSim = button.id.split('-')[1];
-                setupControls(currentSim);
-            });
-        });
-        
-        document.getElementById('ai-predict-btn').addEventListener('click', predictPath);
-
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-            resetSimulation();
-        });
-
-        // --- INITIALIZATION ---
-        resizeCanvas();
-        setupControls('projectile');
-        animate();
-    </script>
+    <script src="js/linear-motion.js"></script>
+    <script src="js/free-fall.js"></script>
+    <script src="js/projectile-motion.js"></script>
+    <script src="js/rotational-motion.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
